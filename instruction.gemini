@@ -1,0 +1,28 @@
+# Shortcuts
+
+Looks at gemini_cli.el and add a table of shortcut to README.md
+
+## Installation
+
+Write how install gemini_cli and provide links to docs in README.md
+
+## Debug
+
+In @gemini_cli.el, debug the gemini-cli/switch-buffer such that it switch to another window and not the one where it is called.+
+
+## Git init
+
+  Make a git init on the current folder.
+
+## Reword commit
+
+  Reword the current git commit and check for the changes and make a precise
+  summary of the change.
+
+## Changelog
+
+  Create a changelog and add what has been change. Consider adding git sha to
+  improve the logging.
+
+  Consider diffing the files that were modified to improve
+  the quality of description.
