@@ -34,8 +34,8 @@ it fun to work with LLMs from Emacs.
 | `C-c C-z` | Switch to the Gemini CLI buffer.                     |
 | `C-c C-r` | Send the selected region to the Gemini CLI.          |
 | `C-M-x`   | Send the current markdown section to the Gemini CLI. |
-| `C-c M-p` | Move up gemini-cli window by one page                |
-| `C-c M-n` | Move down gemini-cli window by one page              |
+| `C-c M-p` | Page up gemini-cli window by one page                |
+| `C-c M-n` | Page down gemini-cli window by one page              |
 |-----------|------------------------------------------------------|
 
 ## Installation
@@ -68,32 +68,9 @@ brew install gemini-cli
 
 ### Emacs Setup
 
-Once `gemini-cli` is installed, you can add `gemini_cli.el` to your Emacs configuration. The recommended way is to install it from MELPA.
+Once `gemini-cli` is installed, you can set up `gemini_cli.el` in your Emacs configuration.
 
-1.  **Add MELPA to your package archives.** If you haven't already, add the following to your `init.el` or `.emacs` file:
-
-    ```elisp
-    (require 'package)
-    (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
-    (package-initialize)
-    ```
-
-2.  **Install and configure `gemini-cli` using `use-package`:**
-
-    ```elisp
-    (use-package gemini-cli
-      :ensure t
-      :config
-      (gemini-cli/mode 1))
-    ```
-    This will download the package from MELPA and enable `gemini-cli-mode` globally.
-
-3.  **Manual Installation:** Alternatively, if you are not using MELPA, ensure `gemini_cli.el` is in your Emacs `load-path` and add the following to your configuration:
-
-    ```elisp
-    (require 'gemini-cli)
-    (gemini-cli/mode 1)
-    ```
+(Further instructions for Emacs setup would go here, e.g., how to load the `gemini_cli.el` file.)
 
 ## Documentation
 

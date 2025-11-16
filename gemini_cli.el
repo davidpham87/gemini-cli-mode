@@ -33,12 +33,14 @@
   "Buffer for the Gemini CLI process.")
 
 (defun gemini-cli/rebind-cli ()
+  "Rebind the gemini-cli/buffer variable."
   (interactive)
   (setq gemini-cli/buffer (switch-to-buffer "*gemini-cli*")))
 
 (defun gemini-cli/log-conversation ()
-  "Log conversation into ~/gemini/tmp/ using scripts. This cirucmvent a
-bug that prevents to scroll up gemini-cli."
+  "Log conversation.
+
+Using ~/gemini/tmp/ with scripts command line, it logs the full conversation with gemini to enable browsing through history.  This cirucmvents a bug that prevents to scroll up gemini-cli."
   (let* ((log-dir (expand-file-name "'~/.gemini/tmp/gemini_el/" default-directory))
          (timestamp (format-time-string "%Y%m%d-%H%M%S"))
          (log-file (concat log-dir timestamp "_gemini_convo.log")))
@@ -90,7 +92,7 @@ The region content is sent as input to the Gemini CLI process."
       (message "Gemini process not running. Run M-x gemini-cli first."))))
 
 (defun gemini-cli/send-shift-key (key n)
-  "Send a key to gemini-cli a number n of time."
+  "Send a KEY to gemini-cli a number N of time."
   (if (buffer-live-p gemini-cli/buffer)
       (progn
         (with-current-buffer gemini-cli/buffer
@@ -99,7 +101,7 @@ The region content is sent as input to the Gemini CLI process."
     (message "Gemini process not running. Run M-x gemini-cli first.")))
 
 (defun gemini-cli/send-key (key n)
-  "Send a key to gemini-cli a number n of time."
+  "Send a KEY to gemini-cli a number N of time."
   (if (buffer-live-p gemini-cli/buffer)
       (progn
         (with-current-buffer gemini-cli/buffer
@@ -107,11 +109,13 @@ The region content is sent as input to the Gemini CLI process."
             (vterm-send-key key))))
     (message "Gemini process not running. Run M-x gemini-cli first.")))
 
-(defun gemini-cli/move-window-up ()
+(defun gemini-cli/move-page-up ()
+  "Move page up by a page in Gemini-cli."
   (interactive)
   (gemini-cli/send-key "<prior>" 1))
 
-(defun gemini-cli/move-window-down ()
+(defun gemini-cli/move-page-down ()
+  "Move page down by a page in Gemini-cli."
   (interactive)
   (gemini-cli/send-key "<next>" 1))
 
@@ -131,8 +135,8 @@ The region content is sent as input to the Gemini CLI process."
     (define-key map (kbd "C-c C-z") 'gemini-cli/switch-buffer)
     (define-key map (kbd "C-c C-r") 'gemini-cli/send-region)
     (define-key map (kbd "C-M-x") 'gemini-cli/send-section)
-    (define-key map (kbd "C-c M-p") 'gemini-cli/move-window-up)
-    (define-key map (kbd "C-c M-n") 'gemini-cli/move-window-down)
+    (define-key map (kbd "C-c M-p") 'gemini-cli/page-up)
+    (define-key map (kbd "C-c M-n") 'gemini-cli/page-down)
     map)
   "Keymap for gemini-mode.")
 
@@ -154,3 +158,7 @@ The region content is sent as input to the Gemini CLI process."
 
 (provide 'gemini-cli)
 ;;; gemini.el ends here
+
+(provide 'gemini_cli)
+
+;;; gemini_cli.el ends here
