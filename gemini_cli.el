@@ -109,12 +109,12 @@ The region content is sent as input to the Gemini CLI process."
             (vterm-send-key key))))
     (message "Gemini process not running. Run M-x gemini-cli first.")))
 
-(defun gemini-cli/move-page-up ()
+(defun gemini-cli/page-up ()
   "Move page up by a page in Gemini-cli."
   (interactive)
   (gemini-cli/send-key "<prior>" 1))
 
-(defun gemini-cli/move-page-down ()
+(defun gemini-cli/page-down ()
   "Move page down by a page in Gemini-cli."
   (interactive)
   (gemini-cli/send-key "<next>" 1))
