@@ -1,6 +1,7 @@
 ;;; gemini-cli-mode.el --- Emacs interface for Gemini CLI -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2025 David Pham
+;; SPDX-License-Identifier: Apache-2.0
 
 ;; Author: David Pham <davidpham87@gmail.com>
 ;; Version: 0.1.0
