@@ -36,7 +36,7 @@ it fun to work with LLMs from Emacs.
 | `C-M-x`   | Send the current markdown section to the Gemini CLI. |
 | `C-c M-p` | Page up gemini-cli window by one page                |
 | `C-c M-n` | Page down gemini-cli window by one page              |
-|-----------|------------------------------------------------------|
+
 
 ## Installation
 
@@ -44,7 +44,7 @@ To use `gemini-cli.el`, you first need to install the `gemini-cli` itself.
 
 ### Install Gemini CLI
 
-YouCan install the Gemini CLI using `npm` (Node.js Package Manager) or `Homebrew`.
+You can install the Gemini CLI using `npm` (Node.js Package Manager) or `Homebrew`.
 
 **Prerequisites:** Ensure you have Node.js (version 18 or higher) installed.
 
@@ -68,9 +68,15 @@ brew install gemini-cli
 
 ### Emacs Setup
 
-Once `gemini-cli` is installed, you can set up `gemini_cli.el` in your Emacs configuration.
+Once `gemini-cli` is installed, you can set up `gemini-cli-mode` in your Emacs
+configuration.
 
-(Further instructions for Emacs setup would go here, e.g., how to load the `gemini_cli.el` file.)
+You will need to install the following dependencies.
+
+* [vterm](https://github.com/akermu/emacs-libvterm)
+* Markdown mode
+
+For now you can just download the file and execute it on your path.
 
 ## Documentation
 
