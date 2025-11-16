@@ -20,7 +20,7 @@ If LLMs are powerful tools, we want the same workflow as programmers:
 2. We should be able to send regions to Gemini for evaluation.
 3. We want to evaluate sections interactively and effortlessly.
 
-`gemini_cli.el is the missing piece. We are leveraging the new `gemini-cli` that provides a
+`gemini_cli_mode` is the missing piece. We are leveraging the new `gemini-cli` that provides a
 powerful REPL-like environment.
 
 This library provides some helpful functions to ease development and make

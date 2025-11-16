@@ -1,4 +1,4 @@
-;;; gemini --- Emacs interface for Gemini CLI
+;;; gemini-cli-mode --- Emacs interface for Gemini CLI
 
 ;; Copyright (C) 2025 David Pham
 
@@ -89,7 +89,7 @@ The region content is sent as input to the Gemini CLI process."
             (vterm-send-escape)
             (vterm-send-return)
             (vterm-send-return)))
-      (message "Gemini process not running. Run M-x gemini-cli first."))))
+      (message "Gemini process not running. Run M-x gemini-cli/start first."))))
 
 (defun gemini-cli/send-shift-key (key n)
   "Send a KEY to gemini-cli a number N of time."
@@ -98,7 +98,7 @@ The region content is sent as input to the Gemini CLI process."
         (with-current-buffer gemini-cli/buffer
           (dotimes (number n)
             (vterm-send-key key t))))
-    (message "Gemini process not running. Run M-x gemini-cli first.")))
+    (message "Gemini process not running. Run M-x gemini-cli/start first.")))
 
 (defun gemini-cli/send-key (key n)
   "Send a KEY to gemini-cli a number N of time."
@@ -107,7 +107,7 @@ The region content is sent as input to the Gemini CLI process."
         (with-current-buffer gemini-cli/buffer
           (dotimes (number n)
             (vterm-send-key key))))
-    (message "Gemini process not running. Run M-x gemini-cli first.")))
+    (message "Gemini process not running. Run M-x gemini-cli/start first.")))
 
 (defun gemini-cli/page-up ()
   "Move page up by a page in Gemini-cli."
@@ -127,7 +127,6 @@ The region content is sent as input to the Gemini CLI process."
     (let ((start (point)))
       (outline-end-of-subtree)
       (gemini-cli/send-region start (point)))))
-
 
 (defvar gemini-cli/mode-map
   (let ((map (make-sparse-keymap)))
@@ -156,9 +155,6 @@ The region content is sent as input to the Gemini CLI process."
 ;; Activate markdown-mode when gemini is active
 (add-hook 'gemini-cli/major-mode-hook (lambda () (markdown-mode 1)))
 
-(provide 'gemini-cli)
-;;; gemini.el ends here
+(provide 'gemini-cli-mode)
 
-(provide 'gemini_cli)
-
-;;; gemini_cli.el ends here
+;;; gemini_cli_mode ends here
