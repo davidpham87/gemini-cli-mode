@@ -1,5 +1,16 @@
 ;;; gemini --- Emacs interface for Gemini CLI
 
+;; Copyright (C) 2025 David Pham
+
+;; Author: David Pham davidpham87@gmail.com
+;; Version: 0.1.0
+;; Package-Version: 20251116.12345
+;; Keywords: gemini-cli
+;; URL: https://github.com/davidpham87/gemini_cli.el
+;; Package-Requires: ((emacs "27.1"))
+
+;; This file is not part of GNU Emacs.
+
 ;;; Commentary:
 ;; This file provides functions and a minor mode to interact with the Gemini CLI
 ;; from within Emacs.  It allows starting the Gemini CLI in a term buffer,

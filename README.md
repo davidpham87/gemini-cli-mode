@@ -1,6 +1,14 @@
-# gemini_cli.el
+# gemini_cli.el: Emacs interface to gemini cli
 
-A library for interacting with Gemini from Emacs.
+A library for interacting with Gemini from Emacs. Provide a `gemini` mode with
+shortcuts to
+
+1. To create a vterm with gemini-cli, and switching to it easily.
+2. Send region / mardown section to gemini-cli
+3. Move up/down vterm window
+
+This is just to replicate the repl driven workflow on Clojure, but with Gemini
+as backend.
 
 ## Motivation
 
