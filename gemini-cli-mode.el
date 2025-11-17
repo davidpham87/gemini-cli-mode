@@ -98,32 +98,19 @@ region."
             (vterm-send-return)))
       (message "Gemini process not running. Run M-x gemini-cli-start first."))))
 
-(defun gemini-cli-send-shift-key (key n)
+(defun gemini-cli-send-key (n key &optional shift meta ctrl accept-proc-output)
   "Send a KEY with the shift modifier to the Gemini CLI.
 This function sends the specified KEY to the `*gemini-cli*'
 buffer N times with the shift modifier active.
 
 Argument KEY is the key to send, as a string.
-Argument N is the number of times to send the key."
+Argument N is the number of times to send the key.
+Optional modifiers SHIFT, META and CTRL."
   (if (buffer-live-p gemini-cli-buffer)
       (progn
         (with-current-buffer gemini-cli-buffer
           (dotimes (number n)
-            (vterm-send-key key t))))
-    (message "Gemini process not running. Run M-x gemini-cli-start first.")))
-
-(defun gemini-cli-send-key (key n)
-  "Send a KEY to the Gemini CLI.
-This function sends the specified KEY to the `*gemini-cli*'
-buffer N times.
-
-Argument KEY is the key to send, as a string.
-Argument N is the number of times to send the key."
-  (if (buffer-live-p gemini-cli-buffer)
-      (progn
-        (with-current-buffer gemini-cli-buffer
-          (dotimes (number n)
-            (vterm-send-key key))))
+            (vterm-send-key key shift meta ctrl accept-proc-output))))
     (message "Gemini process not running. Run M-x gemini-cli-start first.")))
 
 (defun gemini-cli-page-up ()
@@ -131,14 +118,14 @@ Argument N is the number of times to send the key."
 This is equivalent to pressing the Page Up key in the
 `*gemini-cli*' buffer."
   (interactive)
-  (gemini-cli-send-key "<prior>" 1))
+  (gemini-cli-send-key 1 "<prior>" t))
 
 (defun gemini-cli-page-down ()
   "Send the page down key to the Gemini CLI.
 This is equivalent to pressing the Page Down key in the
 `*gemini-cli*' buffer."
   (interactive)
-  (gemini-cli-send-key "<next>" 1))
+  (gemini-cli-send-key 1 "<next>" t))
 
 (defun gemini-cli-send-section ()
   "Send the current markdown section to the Gemini CLI.
