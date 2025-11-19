@@ -22,6 +22,9 @@
 (defvar gemini-cli-buffer nil
   "Buffer for the Gemini CLI process.")
 
+(defvar gemini-cli-cmd "gemini"
+  "Command to use to launch gemini")
+
 (defun gemini-cli-rebind-cli ()
   "Rebind `gemini-cli-buffer' to the current buffer.
 This command is useful if the `gemini-cli-buffer' variable is not
@@ -59,11 +62,11 @@ not log the conversation to a file.  Otherwise, it calls
       (message "Gemini process already running")
     (progn
       (let* ((new-window (split-window-horizontally)))
-        (setq gemini-cli-buffer (vterm "gemini-cli"))
+        (setq gemini-cli-buffer (vterm "*gemini-cli*"))
         (when (not ignore-logging-p)
           (gemini-cli-log-conversation))
         (set-window-buffer new-window gemini-cli-buffer)
-        (vterm-send-string "gemini")
+        (vterm-send-string gemini-cli-cmd)
         (vterm-send-return)))))
 
 (defun gemini-cli-switch-buffer ()
