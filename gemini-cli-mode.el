@@ -80,6 +80,7 @@ it in another window.  If the buffer is not live, it calls
     (gemini-cli-start)))
 
 (defun gemini-execute-prompt ()
+  (interactive)
   (if (buffer-live-p gemini-cli-buffer)
       (progn
         (with-current-buffer gemini-cli-buffer
@@ -88,14 +89,15 @@ it in another window.  If the buffer is not live, it calls
           (vterm-send-return)))
     (message "Gemini process not running. Run M-x gemini-cli-start first.")))
 
-(defun gemini-send-prompt (prompt &optional )
+(defun gemini-send-prompt (prompt &optional sleep-time)
   (interactive "r")
   (if (buffer-live-p gemini-cli-buffer)
       (progn
         (with-current-buffer gemini-cli-buffer
           (vterm-send-string prompt)
-          (sleep-for 0.5)
-          (gemini-execute-prompt)))
+          (sleep-for (or sleep-time 0.5))
+          (gemini-execute-prompt)
+          (vterm-send-return)))
     (message "Gemini process not running. Run M-x gemini-cli-start first.")))
 
 (defun gemini-cli-send-region (start end)
@@ -158,11 +160,12 @@ section to the Gemini CLI."
   (interactive)
   (gemini-cli-send-key 1 "a" nil t))
 
-(defun gemini-cli-import-last-result-at-point ()
+(defun gemini-cli-copy-last-result-at-point ()
   "Copy the last result of gemini-cli and copy it in the current buffer"
   (interactive)
   (gemini-send-prompt "/copy" 0.1)
-  (yank))
+  (sleep-for 0.1)
+  (insert (shell-command-to-string "xclip -o -selection clipboard")))
 
 (defvar gemini-cli-mode-map
   (let ((map (make-sparse-keymap)))
@@ -173,6 +176,8 @@ section to the Gemini CLI."
     (define-key map (kbd "C-c M-p") 'gemini-cli-page-up)
     (define-key map (kbd "C-c M-n") 'gemini-cli-page-down)
     (define-key map (kbd "C-c C-a") 'gemini-cli-start-line)
+    (define-key map (kbd "C-c C-e") 'gemini-cli-copy-last-result-at-point)
+    (define-key map (kbd "C-c <RET>") 'gemini-execute-prompt)
     map)
   "Keymap for gemini-mode.")
 
