@@ -177,7 +177,7 @@ section to the Gemini CLI."
     (define-key map (kbd "C-c M-n") 'gemini-cli-page-down)
     (define-key map (kbd "C-c C-a") 'gemini-cli-start-line)
     (define-key map (kbd "C-c C-e") 'gemini-cli-copy-last-result-at-point)
-    (define-key map (kbd "C-c <RET>") 'gemini-execute-prompt)
+    (define-key map (kbd "C-c C-RET") 'gemini-execute-prompt)
     map)
   "Keymap for gemini-mode.")
 
