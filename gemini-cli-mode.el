@@ -212,7 +212,8 @@ If the target buffer is not live, try to find another active one or return nil."
           (with-current-buffer target-buffer
             (vterm-send-string prompt)
             (sleep-for (or sleep-time 0.5))
-            (gemini-execute-prompt)
+            (vterm-send-escape)
+            (vterm-send-return)
             (vterm-send-return)))
       (message "Gemini process not running. Run M-x gemini-cli-start first."))))
 
