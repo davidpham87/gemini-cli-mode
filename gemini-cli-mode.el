@@ -84,6 +84,50 @@ is a workaround for a bug that prevents scrolling up in the
   (cl-find-if (lambda (agent) (string= (plist-get agent :name) name))
               gemini-cli-agents))
 
+(defun gemini-cli--resolve-agent-name (agent-config-or-name)
+  "Resolve the agent name from AGENT-CONFIG-OR-NAME."
+  (cond ((stringp agent-config-or-name) agent-config-or-name)
+        ((and (listp agent-config-or-name) (plist-get agent-config-or-name :name))
+         (plist-get agent-config-or-name :name))
+        ((> (length gemini-cli-agents) 1)
+         (completing-read "Select agent to start: "
+                          (mapcar (lambda (a) (plist-get a :name)) gemini-cli-agents)))
+        (t "gemini")))
+
+(defun gemini-cli--resolve-config (agent-config-or-name agent-name)
+  "Resolve the configuration for AGENT-NAME.
+Use AGENT-CONFIG-OR-NAME if it is a configuration list."
+  (or (if (listp agent-config-or-name)
+          agent-config-or-name
+        (gemini-cli--get-agent-config agent-name))
+      (list :name "gemini" :command gemini-cli-cmd)))
+
+(defun gemini-cli--initialize-session (buffer config ignore-logging-p)
+  "Initialize the Gemini session in BUFFER with CONFIG.
+IGNORE-LOGGING-P disables logging."
+  (with-current-buffer buffer
+    (let ((cmd (or (plist-get config :command) gemini-cli-cmd))
+          (home-dir (plist-get config :home-directory))
+          (init-prompt (plist-get config :initial-prompt)))
+      (when (not ignore-logging-p)
+        (gemini-cli--log-conversation))
+      (when home-dir
+        (vterm-send-string (format "cd %s" home-dir))
+        (vterm-send-return))
+      (vterm-send-string cmd)
+      (vterm-send-return)
+      (when init-prompt
+        (vterm-send-string init-prompt)
+        (gemini-cli-execute-prompt)
+        (vterm-send-return)))))
+
+(defun gemini-cli--setup-buffer-state (agent-name buffer)
+  "Update global state for AGENT-NAME and BUFFER."
+  (puthash agent-name buffer gemini-cli-active-buffers)
+  (setq gemini-cli-last-buffer buffer)
+  (when (string= agent-name "gemini")
+    (setq gemini-cli-buffer buffer)))
+
 (defun gemini-cli-start (&optional agent-config-or-name ignore-logging-p)
   "Start the Gemini CLI in a vterm buffer.
 AGENT-CONFIG-OR-NAME can be a configuration plist or an agent name string.
@@ -96,50 +140,17 @@ When called with a prefix argument IGNORE-LOGGING-P, it will
 not log the conversation to a file.  Otherwise, it calls
 `gemini-cli-log-conversation' to start logging."
   (interactive (list nil current-prefix-arg))
-  (let* ((agent-name
-          (cond ((stringp agent-config-or-name) agent-config-or-name)
-                ((and (listp agent-config-or-name) (plist-get agent-config-or-name :name))
-                 (plist-get agent-config-or-name :name))
-                ((> (length gemini-cli-agents) 1)
-                 (completing-read "Select agent to start: " (mapcar (lambda (a) (plist-get a :name)) gemini-cli-agents)))
-                (t "gemini")))
-         (config (if (listp agent-config-or-name)
-                     agent-config-or-name
-                   (gemini-cli--get-agent-config agent-name)))
-         ;; If config is not found in gemini-cli-agents but name is "gemini", create default config
-         (config (or config (list :name "gemini" :command gemini-cli-cmd)))
-         (buffer-name (format "*gemini-%s*" agent-name))
+  (let* ((agent-name (gemini-cli--resolve-agent-name agent-config-or-name))
+         (config (gemini-cli--resolve-config agent-config-or-name agent-name))
          (buffer (gethash agent-name gemini-cli-active-buffers)))
 
     (if (buffer-live-p buffer)
         (message "Agent '%s' is already running in buffer %s" agent-name buffer)
-      (progn
-        (let* ((new-window (split-window-horizontally))
-               (cmd (or (plist-get config :command) gemini-cli-cmd))
-               (home-dir (plist-get config :home-directory))
-               (init-prompt (plist-get config :initial-prompt)))
-          (setq buffer (vterm buffer-name))
-          (puthash agent-name buffer gemini-cli-active-buffers)
-          (setq gemini-cli-last-buffer buffer)
-          ;; Compatibility with single buffer mode
-          (when (string= agent-name "gemini")
-            (setq gemini-cli-buffer buffer))
-
-          (when (not ignore-logging-p)
-            (gemini-cli--log-conversation))
-          (set-window-buffer new-window buffer)
-
-          (when home-dir
-            (vterm-send-string (format "cd %s" home-dir))
-            (vterm-send-return))
-
-          (vterm-send-string cmd)
-          (vterm-send-return)
-
-          (when init-prompt
-             (vterm-send-string init-prompt)
-             (gemini-cli-execute-prompt)
-             (vterm-send-return)))))))
+      (let ((new-window (split-window-horizontally))
+            (new-buffer (vterm (format "*gemini-%s*" agent-name))))
+        (gemini-cli--setup-buffer-state agent-name new-buffer)
+        (set-window-buffer new-window new-buffer)
+        (gemini-cli--initialize-session new-buffer config ignore-logging-p)))))
 
 (defun gemini-cli--get-active-agent-names ()
   "Return a list of names of active agents."
@@ -147,6 +158,13 @@ not log the conversation to a file.  Otherwise, it calls
            using (hash-values v)
            when (buffer-live-p v)
            collect k))
+
+(defun gemini-cli--select-active-agent (prompt)
+  "Prompt the user to select an active agent with PROMPT."
+  (let ((active-names (gemini-cli--get-active-agent-names)))
+    (if active-names
+        (completing-read prompt active-names)
+      nil)))
 
 (defun gemini-cli-switch-buffer (&optional prefix)
   "Switch to a Gemini CLI buffer.
@@ -156,9 +174,8 @@ If no agent is running, it starts the default one."
   (interactive "P")
   (let ((target-buffer
          (if prefix
-             (let* ((active-names (gemini-cli--get-active-agent-names))
-                    (agent-name (completing-read "Switch to agent: " active-names)))
-               (gethash agent-name gemini-cli-active-buffers))
+             (let ((agent-name (gemini-cli--select-active-agent "Switch to agent: ")))
+               (if agent-name (gethash agent-name gemini-cli-active-buffers) nil))
            gemini-cli-last-buffer)))
 
     (if (buffer-live-p target-buffer)
@@ -172,23 +189,17 @@ If no agent is running, it starts the default one."
 If PREFIX is non-nil, prompt the user to select an active agent.
 Otherwise, return `gemini-cli-last-buffer`.
 If the target buffer is not live, try to find another active one or return nil."
-  (let ((buffer
-         (if prefix
-             (let* ((active-names (gemini-cli--get-active-agent-names))
-                    (agent-name (if active-names
-                                    (completing-read "Execute in agent: " active-names)
-                                  nil)))
-               (if agent-name (gethash agent-name gemini-cli-active-buffers) nil))
-           gemini-cli-last-buffer)))
-    (if (buffer-live-p buffer)
-        buffer
-      ;; Fallback: try to find any live buffer
-      (let ((active-names (gemini-cli--get-active-agent-names)))
-        (if active-names
-            (let ((new-buf (gethash (car active-names) gemini-cli-active-buffers)))
-              (setq gemini-cli-last-buffer new-buf)
-              new-buf)
-          nil)))))
+  (let ((buffer (cond (prefix
+                       (let ((name (gemini-cli--select-active-agent "Execute in agent: ")))
+                         (gethash name gemini-cli-active-buffers)))
+                      ((buffer-live-p gemini-cli-last-buffer)
+                       gemini-cli-last-buffer)
+                      (t
+                       (let ((name (car (gemini-cli--get-active-agent-names))))
+                         (gethash name gemini-cli-active-buffers))))))
+    (when (buffer-live-p buffer)
+      (setq gemini-cli-last-buffer buffer)
+      buffer)))
 
 (defun gemini-cli-execute-prompt (&optional prefix)
   (interactive "P")
