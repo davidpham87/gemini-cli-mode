@@ -65,7 +65,7 @@ Prompts for AGENT-NAME if not provided."
       (setq gemini-cli-buffer (current-buffer)))
     (message "Bound current buffer to agent '%s'." name)))
 
-(defun gemini-cli-log-conversation ()
+(defun gemini-cli--log-conversation ()
   "Log the conversation with Gemini to a file.
 This function creates a log file in the `~/.gemini/tmp/gemini_el/'
 directory with a timestamped name.  It then uses the `script'
@@ -126,7 +126,7 @@ not log the conversation to a file.  Otherwise, it calls
             (setq gemini-cli-buffer buffer))
 
           (when (not ignore-logging-p)
-            (gemini-cli-log-conversation))
+            (gemini-cli--log-conversation))
           (set-window-buffer new-window buffer)
 
           (when home-dir
@@ -138,7 +138,7 @@ not log the conversation to a file.  Otherwise, it calls
 
           (when init-prompt
              (vterm-send-string init-prompt)
-             (gemini-execute-prompt)
+             (gemini-cli-execute-prompt)
              (vterm-send-return)))))))
 
 (defun gemini-cli--get-active-agent-names ()
@@ -190,7 +190,7 @@ If the target buffer is not live, try to find another active one or return nil."
               new-buf)
           nil)))))
 
-(defun gemini-execute-prompt (&optional prefix)
+(defun gemini-cli-execute-prompt (&optional prefix)
   (interactive "P")
   (let ((target-buffer (gemini-cli--get-target-buffer prefix)))
     (if (buffer-live-p target-buffer)
@@ -202,7 +202,7 @@ If the target buffer is not live, try to find another active one or return nil."
             (vterm-send-return)))
       (message "Gemini process not running. Run M-x gemini-cli-start first."))))
 
-(defun gemini-send-prompt (prompt &optional sleep-time prefix)
+(defun gemini-cli-send-prompt (prompt &optional sleep-time prefix)
   (interactive "sPrompt: \nP")
   (let ((target-buffer (gemini-cli--get-target-buffer prefix)))
     (if (buffer-live-p target-buffer)
@@ -229,9 +229,9 @@ interactively, START and END are the boundaries of the current
 region."
   (interactive "r\nP")
   (let ((region-text (buffer-substring-no-properties start end)))
-    (gemini-send-prompt region-text nil prefix)))
+    (gemini-cli-send-prompt region-text nil prefix)))
 
-(defun gemini-cli-send-key (n key &optional shift meta ctrl accept-proc-output prefix)
+(defun gemini-cli--send-key (n key &optional shift meta ctrl accept-proc-output prefix)
   "Send a KEY with the shift modifier to the Gemini CLI.
 This function sends the specified KEY to the Gemini CLI
 buffer N times with the shift modifier active.
@@ -255,7 +255,7 @@ This is equivalent to pressing the Page Up key in the
 Gemini buffer.
 With PREFIX, prompt for agent."
   (interactive "P")
-  (gemini-cli-send-key 1 "<prior>" t nil nil nil prefix))
+  (gemini-cli--send-key 1 "<prior>" t nil nil nil prefix))
 
 (defun gemini-cli-page-down (&optional prefix)
   "Send the page down key to the Gemini CLI.
@@ -263,7 +263,7 @@ This is equivalent to pressing the Page Down key in the
 Gemini buffer.
 With PREFIX, prompt for agent."
   (interactive "P")
-  (gemini-cli-send-key 1 "<next>" t nil nil nil prefix))
+  (gemini-cli--send-key 1 "<next>" t nil nil nil prefix))
 
 (defun gemini-cli-send-section (&optional prefix)
   "Send the current markdown section to the Gemini CLI.
@@ -283,13 +283,13 @@ With PREFIX, prompt for agent."
   "Go to the start of the instruction prompts.
 With PREFIX, prompt for agent."
   (interactive "P")
-  (gemini-cli-send-key 1 "a" nil t nil nil prefix))
+  (gemini-cli--send-key 1 "a" nil t nil nil prefix))
 
 (defun gemini-cli-copy-last-result-at-point (&optional prefix)
   "Copy the last result of gemini-cli and copy it in the current buffer.
 With PREFIX, prompt for agent."
   (interactive "P")
-  (gemini-send-prompt "/copy" 0.1 prefix)
+  (gemini-cli-send-prompt "/copy" 0.1 prefix)
   (sleep-for 0.1)
   (insert (shell-command-to-string "xclip -o -selection clipboard")))
 
@@ -320,7 +320,7 @@ With PREFIX, prompt for agent."
     (define-key map (kbd "C-c M-n") 'gemini-cli-page-down)
     (define-key map (kbd "C-c C-a") 'gemini-cli-start-line)
     (define-key map (kbd "C-c C-e") 'gemini-cli-copy-last-result-at-point)
-    (define-key map (kbd "C-c C-<return>") 'gemini-execute-prompt)
+    (define-key map (kbd "C-c C-<return>") 'gemini-cli-execute-prompt)
     map)
   "Keymap for gemini-mode.")
 
