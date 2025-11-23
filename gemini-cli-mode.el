@@ -43,12 +43,8 @@ Each element is a property list with keys:
 (defvar gemini-cli-last-buffer nil
   "The last visited Gemini CLI buffer.")
 
-(defvar gemini-cli-buffer nil
-  "Buffer for the Gemini CLI process.
-DEPRECATED: Use `gemini-cli-last-buffer` or look up in `gemini-cli-active-buffers`.")
-
 (defvar gemini-cli-cmd "gemini"
-  "Command to use to launch gemini")
+  "Command to use to launch gemini.")
 
 (defun gemini-cli-rebind-cli (&optional agent-name)
   "Bind the current buffer to a Gemini agent.
@@ -72,7 +68,7 @@ directory with a timestamped name.  It then uses the `script'
 command to record the entire vterm session to this file.  This
 is a workaround for a bug that prevents scrolling up in the
 `gemini-cli' buffer."
-  (let* ((log-dir (expand-file-name "'~/.gemini/tmp/gemini_el/" default-directory))
+  (let* ((log-dir (expand-file-name "~/.gemini/tmp/gemini_el/" default-directory))
          (timestamp (format-time-string "%Y%m%d-%H%M%S"))
          (log-file (concat log-dir timestamp "_gemini_convo.log")))
     (make-directory log-dir t)
@@ -130,8 +126,10 @@ IGNORE-LOGGING-P disables logging."
 
 (defun gemini-cli-start (&optional agent-config-or-name ignore-logging-p)
   "Start the Gemini CLI in a vterm buffer.
+
 AGENT-CONFIG-OR-NAME can be a configuration plist or an agent name string.
-If nil, it defaults to the \"gemini\" agent or prompts if multiple agents are defined.
+If nil, it defaults to the \"gemini\" agent or prompts if multiple agents are
+defined.
 
 This function opens a new vterm buffer named `*gemini-{{name}}*',
 splits the window horizontally, and starts the Gemini CLI.
@@ -148,9 +146,8 @@ not log the conversation to a file.  Otherwise, it calls
         (message "Agent '%s' is already running in buffer %s" agent-name buffer)
       (let* ((new-window (split-window-horizontally))
              (buffer-name (format "*gemini-%s*" agent-name))
-             (other-buffer (switch-to-buffer-other-window buffer-name))
-             (new-buffer
-              (vterm (generate-new-buffer buffer-name))))
+             (new-buffer (vterm buffer-name)))
+        (switch-to-buffer-other-window new-buffer)
         (gemini-cli--setup-buffer-state agent-name new-buffer)
         (gemini-cli--initialize-session new-buffer config ignore-logging-p)))))
 
@@ -206,6 +203,9 @@ If the target buffer is not live, try to find another active one or return nil."
       buffer)))
 
 (defun gemini-cli-execute-prompt (&optional prefix)
+  "Execute the current prompt in Gemini cli terminal.
+
+Use PREFIX to open the choose the agent."
   (interactive "P")
   (let ((target-buffer (gemini-cli--get-target-buffer prefix)))
     (if (buffer-live-p target-buffer)
@@ -218,6 +218,9 @@ If the target buffer is not live, try to find another active one or return nil."
       (message "Gemini process not running. Run M-x gemini-cli-start first."))))
 
 (defun gemini-cli-send-prompt (prompt &optional sleep-time prefix)
+  "Execute a PROMPT entered by use in use Gemini cli terminal.
+
+Wait SLEEP-TIME before executing.  Use PREFIX to open the choose the agent."
   (interactive "sPrompt: \nP")
   (let ((target-buffer (gemini-cli--get-target-buffer prefix)))
     (if (buffer-live-p target-buffer)
@@ -233,15 +236,17 @@ If the target buffer is not live, try to find another active one or return nil."
 
 (defun gemini-cli-send-region (start end &optional prefix)
   "Send the current region to the Gemini CLI process.
+
 The text between START and END is sent to the Gemini CLI
 buffer without switching the current buffer.
-
 When called with a prefix argument (C-u), prompt for the target agent.
 
 This function is interactive, so it can be called with `M-x
 gemini-cli-send-region' or bound to a key.  When called
 interactively, START and END are the boundaries of the current
-region."
+region.
+
+Use PREFIX to chose agent."
   (interactive "r\nP")
   (let ((region-text (buffer-substring-no-properties start end)))
     (gemini-cli-send-prompt region-text nil prefix)))
@@ -295,7 +300,8 @@ With PREFIX, prompt for agent."
       (gemini-cli-send-region start (point) prefix))))
 
 (defun gemini-cli-start-line (&optional prefix)
-  "Go to the start of the instruction prompts.
+  "Go to the start of the instruction prompt.
+
 With PREFIX, prompt for agent."
   (interactive "P")
   (gemini-cli--send-key 1 "a" nil t nil nil prefix))
