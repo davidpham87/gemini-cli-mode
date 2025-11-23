@@ -156,10 +156,12 @@ not log the conversation to a file.  Otherwise, it calls
 
 (defun gemini-cli--get-active-agent-names ()
   "Return a list of names of active agents."
-  (cl-loop for k being the hash-keys of gemini-cli-active-buffers
-           using (hash-values v)
-           when (buffer-live-p v)
-           collect k))
+  (sort
+   (cl-loop for k being the hash-keys of gemini-cli-active-buffers
+            using (hash-values v)
+            when (buffer-live-p v)
+            collect k)
+   #'string<))
 
 (defun gemini-cli--select-active-agent (prompt)
   "Prompt the user to select an active agent with PROMPT."
