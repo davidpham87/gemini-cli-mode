@@ -36,6 +36,9 @@ it fun to work with LLMs from Emacs.
 | `C-M-x`   | Send the current markdown section to the Gemini CLI. |
 | `C-c M-p` | Page up gemini-cli window by one page                |
 | `C-c M-n` | Page down gemini-cli window by one page              |
+| `C-c C-a` | Go to the start of the instruction prompt            |
+| `C-c C-e` | Copy the last result to clipboard and insert         |
+| `C-c C-<return>` | Execute the current prompt                    |
 
 
 ## Usage
