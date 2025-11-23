@@ -20,6 +20,8 @@
 ;;; Code:
 
 (require 'cl-lib) ;; Required for cl-loop and other cl-lib features
+(require 'outline)
+(require 'vterm)
 
 (defgroup gemini-cli nil
   "Gemini CLI interface."
@@ -146,9 +148,9 @@ not log the conversation to a file.  Otherwise, it calls
 
     (if (buffer-live-p buffer)
         (message "Agent '%s' is already running in buffer %s" agent-name buffer)
-      (let* ((new-window (split-window-horizontally))
+      (let* ((_new-window (split-window-horizontally))
              (buffer-name (format "*gemini-%s*" agent-name))
-             (other-buffer (switch-to-buffer-other-window buffer-name))
+             (_other-buffer (switch-to-buffer-other-window buffer-name))
              (new-buffer
               (vterm (generate-new-buffer buffer-name))))
         (gemini-cli--setup-buffer-state agent-name new-buffer)
@@ -173,7 +175,7 @@ not log the conversation to a file.  Otherwise, it calls
 (defun gemini-cli-switch-buffer (&optional prefix)
   "Switch to a Gemini CLI buffer.
 By default, switches to the last visited Gemini buffer.
-With PREFIX argument (C-u), prompts to select an agent to switch to.
+With PREFIX argument (\\<gemini-cli-mode-map>\\[universal-argument]), prompts to select an agent to switch to.
 If no agent is running, it starts the default one."
   (interactive "P")
   (let ((target-buffer
@@ -186,7 +188,7 @@ If no agent is running, it starts the default one."
         (progn
           (switch-to-buffer-other-window target-buffer)
           (setq gemini-cli-last-buffer target-buffer))
-      (call-interactively 'gemini-cli-start))))
+      (call-interactively #'gemini-cli-start))))
 
 (defun gemini-cli--get-target-buffer (&optional prefix)
   "Get the target buffer for commands.
@@ -236,7 +238,7 @@ If the target buffer is not live, try to find another active one or return nil."
 The text between START and END is sent to the Gemini CLI
 buffer without switching the current buffer.
 
-When called with a prefix argument (C-u), prompt for the target agent.
+When called with a prefix argument (\\<gemini-cli-mode-map>\\[universal-argument]), prompt for the target agent.
 
 This function is interactive, so it can be called with `M-x
 gemini-cli-send-region' or bound to a key.  When called
@@ -260,7 +262,7 @@ Optional PREFIX to select agent."
         (progn
           (setq gemini-cli-last-buffer target-buffer)
           (with-current-buffer target-buffer
-            (dotimes (number n)
+            (dotimes (_ n)
               (vterm-send-key key shift meta ctrl accept-proc-output))))
       (message "Gemini process not running. Run M-x gemini-cli-start first."))))
 
@@ -327,15 +329,15 @@ With PREFIX, prompt for agent."
 
 (defvar gemini-cli-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "C-c C-p") 'gemini-cli-start)
-    (define-key map (kbd "C-c C-z") 'gemini-cli-switch-buffer)
-    (define-key map (kbd "C-c C-r") 'gemini-cli-send-region)
-    (define-key map (kbd "C-M-x") 'gemini-cli-send-section)
-    (define-key map (kbd "C-c M-p") 'gemini-cli-page-up)
-    (define-key map (kbd "C-c M-n") 'gemini-cli-page-down)
-    (define-key map (kbd "C-c C-a") 'gemini-cli-start-line)
-    (define-key map (kbd "C-c C-e") 'gemini-cli-copy-last-result-at-point)
-    (define-key map (kbd "C-c C-<return>") 'gemini-cli-execute-prompt)
+    (define-key map (kbd "C-c C-p") #'gemini-cli-start)
+    (define-key map (kbd "C-c C-z") #'gemini-cli-switch-buffer)
+    (define-key map (kbd "C-c C-r") #'gemini-cli-send-region)
+    (define-key map (kbd "C-M-x") #'gemini-cli-send-section)
+    (define-key map (kbd "C-c M-p") #'gemini-cli-page-up)
+    (define-key map (kbd "C-c M-n") #'gemini-cli-page-down)
+    (define-key map (kbd "C-c C-a") #'gemini-cli-start-line)
+    (define-key map (kbd "C-c C-e") #'gemini-cli-copy-last-result-at-point)
+    (define-key map (kbd "C-c C-<return>") #'gemini-cli-execute-prompt)
     map)
   "Keymap for gemini-mode.")
 
@@ -344,7 +346,7 @@ With PREFIX, prompt for agent."
 This mode provides keybindings for starting the Gemini CLI,
 switching to the CLI buffer, and sending text to the CLI."
   :init-value nil
-  :lighter "Gemini"
+  :lighter " Gemini"
   :keymap gemini-cli-mode-map)
 
 ;; Activate gemini mode for .gemini files
