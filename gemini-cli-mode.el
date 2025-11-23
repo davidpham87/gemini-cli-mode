@@ -170,20 +170,6 @@ not log the conversation to a file.  Otherwise, it calls
         (completing-read prompt active-names)
       nil)))
 
-(defun gemini-cli--select-active-agent (prompt)
-  "Prompt the user to select an active agent with PROMPT."
-  (let ((active-names (gemini-cli--get-active-agent-names)))
-    (if active-names
-        (completing-read prompt active-names)
-      nil)))
-
-(defun gemini-cli--select-active-agent (prompt)
-  "Prompt the user to select an active agent with PROMPT."
-  (let ((active-names (gemini-cli--get-active-agent-names)))
-    (if active-names
-        (completing-read prompt active-names)
-      nil)))
-
 (defun gemini-cli-switch-buffer (&optional prefix)
   "Switch to a Gemini CLI buffer.
 By default, switches to the last visited Gemini buffer.
