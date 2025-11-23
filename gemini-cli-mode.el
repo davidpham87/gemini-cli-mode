@@ -146,18 +146,29 @@ not log the conversation to a file.  Otherwise, it calls
 
     (if (buffer-live-p buffer)
         (message "Agent '%s' is already running in buffer %s" agent-name buffer)
-      (let ((new-window (split-window-horizontally))
-            (new-buffer (vterm (format "*gemini-%s*" agent-name))))
+      (let* ((new-window (split-window-horizontally))
+             (buffer-name (format "*gemini-%s*" agent-name))
+             (other-buffer (switch-to-buffer-other-window buffer-name))
+             (new-buffer
+              (vterm (generate-new-buffer buffer-name))))
         (gemini-cli--setup-buffer-state agent-name new-buffer)
-        (set-window-buffer new-window new-buffer)
         (gemini-cli--initialize-session new-buffer config ignore-logging-p)))))
 
 (defun gemini-cli--get-active-agent-names ()
   "Return a list of names of active agents."
-  (cl-loop for k being the hash-keys of gemini-cli-active-buffers
-           using (hash-values v)
-           when (buffer-live-p v)
-           collect k))
+  (sort
+   (cl-loop for k being the hash-keys of gemini-cli-active-buffers
+            using (hash-values v)
+            when (buffer-live-p v)
+            collect k)
+   #'string<))
+
+(defun gemini-cli--select-active-agent (prompt)
+  "Prompt the user to select an active agent with PROMPT."
+  (let ((active-names (gemini-cli--get-active-agent-names)))
+    (if active-names
+        (completing-read prompt active-names)
+      nil)))
 
 (defun gemini-cli--select-active-agent (prompt)
   "Prompt the user to select an active agent with PROMPT."
