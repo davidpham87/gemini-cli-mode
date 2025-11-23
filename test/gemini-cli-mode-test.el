@@ -2,9 +2,11 @@
 
 (require 'ert)
 (require 'cl-lib)
-(require 'gemini-cli-mode)
 
 ;; Mock vterm functions
+;; We define these globally for the test environment because gemini-cli-mode
+;; expects vterm functions to be available, and we are running in -batch mode
+;; where vterm is not installed.
 (defvar gemini-cli-test-vterm-output nil)
 
 (defun vterm-send-string (str)
@@ -23,7 +25,19 @@
   "Mock vterm function."
   buffer)
 
+;; Emulate packages being provided so that if gemini-cli-mode (or its future versions)
+;; attempts to require them, it won't fail in the batch environment where they are missing.
+(provide 'vterm)
+(provide 'markdown-mode)
+
+;; Require the package under test AFTER defining mocks
+(require 'gemini-cli-mode)
+
 ;; Tests
+
+(ert-deftest gemini-cli-test-load ()
+  "Test that the package loads successfully."
+  (should (featurep 'gemini-cli-mode)))
 
 (ert-deftest gemini-cli-test-resolve-agent-name-string ()
   "Test resolving agent name when a string is provided."
