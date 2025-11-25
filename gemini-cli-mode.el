@@ -23,6 +23,14 @@
 (require 'outline)
 (require 'vterm)
 
+(declare-function outline-back-to-heading "outline" (&optional invisible-ok))
+(declare-function outline-end-of-subtree "outline" ())
+(declare-function vterm "vterm" (buffer-name))
+(declare-function vterm-send-string "vterm" (string &optional paste-p))
+(declare-function vterm-send-return "vterm" ())
+(declare-function vterm-send-escape "vterm" ())
+(declare-function vterm-send-key "vterm" (key &optional shift meta ctrl accept-proc-output))
+
 (defgroup gemini-cli nil
   "Gemini CLI interface."
   :group 'tools)
