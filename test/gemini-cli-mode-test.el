@@ -67,7 +67,7 @@
 (ert-deftest gemini-cli-test-resolve-config-from-name ()
   "Test resolving config when name is provided."
   (let ((gemini-cli-agents '((:name "stored" :command "stored-cmd"))))
-    (should (equal (gemini-cli--resolve-config nil "stored")
+    (should (equal (gemini-cli--resolve-config "stored" "stored")
                    '(:name "stored" :command "stored-cmd")))))
 
 (ert-deftest gemini-cli-test-resolve-config-fallback ()
@@ -135,3 +135,14 @@
         ;; Output is pushed in reverse order
         (should (equal (reverse gemini-cli-test-vterm-output)
                        '("test-cmd" "\n" "hello" "\n")))))))
+
+(ert-deftest gemini-cli-test-start-creates-named-buffer ()
+  "Test that gemini-cli-start creates a buffer with the correct name."
+  (let ((gemini-cli-agents '((:name "test-agent" :command "test-cmd"))))
+    (cl-letf (((symbol-function 'split-window-horizontally) #'ignore)
+              ((symbol-function 'switch-to-buffer-other-window) #'ignore)
+              ((symbol-function 'gemini-cli--initialize-session) #'ignore)
+              ((symbol-function 'vterm) (lambda (name) (get-buffer-create name))))
+      (gemini-cli-start "test-agent")
+      (should (buffer-live-p (get-buffer "*gemini-test-agent*")))
+      (kill-buffer "*gemini-test-agent*"))))

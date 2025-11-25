@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased] - 2025-11-23
+
+### Fixed
+- Byte-compilation warnings with Emacs 30.1.
+- Removed deprecated `gemini-cli-buffer` and unused variables.
+- Explicitly require `outline` and `vterm` dependencies.
+- Docstrings and style improvements (Checkdoc, Melpazoid).
+- CI workflow now tests against Emacs 30.1.
+
 ## [b7cf30c](https://github.com/google-gemini/gemini-cli/commit/b7cf30cf666647b2c3e78162bf597f0e4605124d) - 2025-11-16
 
 ### Features
