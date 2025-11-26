@@ -189,7 +189,7 @@ If no agent is running, it starts the default one."
         (progn
           (switch-to-buffer-other-window target-buffer)
           (setq gemini-cli-last-buffer target-buffer))
-      (call-interactively 'gemini-cli-start))))
+      (call-interactively #'gemini-cli-start))))
 
 (defun gemini-cli--get-target-buffer (&optional prefix)
   "Get the target buffer for commands.
