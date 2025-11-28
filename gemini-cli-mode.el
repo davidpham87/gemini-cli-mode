@@ -337,6 +337,13 @@ With PREFIX, prompt for agent."
                       (other-window 1))
                     (switch-to-buffer buffer))))))
 
+(defun gemini-cli-new-chat ()
+  "Create and visit a new file with the pattern YYYYMMDD_HHMM.md in the current directory."
+  (interactive)
+  (let ((filename (format-time-string "%Y%m%d_%H%M.md")))
+    (find-file filename)
+    (message "Created and opened %s" filename)))
+
 (defvar gemini-cli-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c C-p") #'gemini-cli-start)
