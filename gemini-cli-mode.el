@@ -318,7 +318,12 @@ With PREFIX, prompt for agent."
   (interactive "P")
   (gemini-cli-send-prompt "/copy" 0.1 prefix)
   (sleep-for 0.1)
-  (insert (shell-command-to-string "xclip -o -selection clipboard")))
+  (let ((cmd (cond
+              ((eq system-type'darwin)
+               "pbpaste")
+              ((eq system-type 'gnu/linux)
+               "xclip -o -selection clipboard"))))
+    (insert (shell-command-to-string cmd))))
 
 (defun gemini-cli-show-all ()
   "Show all active Gemini CLI buffers in separate windows."
