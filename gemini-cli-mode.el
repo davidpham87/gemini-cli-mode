@@ -101,7 +101,7 @@ is a workaround for a bug that prevents scrolling up in the
 (defun gemini-cli--resolve-config (agent-config-or-name agent-name)
   "Resolve the configuration for AGENT-NAME.
 Use AGENT-CONFIG-OR-NAME if it is a configuration list."
-  (or (if (listp agent-config-or-name)
+  (or (if (and agent-config-or-name (listp agent-config-or-name))
           agent-config-or-name
         (gemini-cli--get-agent-config agent-name))
       (list :name "gemini" :command gemini-cli-cmd)))
