@@ -174,7 +174,7 @@
               #'gemini-cli-page-down)))
 
 (ert-deftest gemini-cli-test-page-up-down ()
-  "Test that page up and down send Shift+Up and Shift+Down."
+  "Test that page up and down send PageUp and PageDown."
   (let ((gemini-cli-active-buffers (make-hash-table :test 'equal))
         (sent-keys nil))
     (with-temp-buffer
@@ -187,7 +187,7 @@
         (gemini-cli-page-up)
         (gemini-cli-page-down)
         (should (equal (reverse sent-keys)
-                       '(("<up>" t) ("<down>" t))))))))
+                       '(("<prior>" nil) ("<next>" nil))))))))
 
 (ert-deftest gemini-cli-test-record-region ()
   "Test recording regions and sending them."
