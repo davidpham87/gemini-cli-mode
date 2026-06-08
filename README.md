@@ -33,6 +33,9 @@ it fun to work with LLMs from Emacs.
 | `C-c C-p` | Start the Gemini CLI in a new terminal window.       |
 | `C-c C-z` | Switch to the Gemini CLI buffer.                     |
 | `C-c C-r` | Send the selected region to the Gemini CLI.          |
+| `C-c C-l` | Send the selected region with its file & line context. |
+| `C-c M-w` | Record the selected region (file, lines, text) to a list. |
+| `C-c C-y` | Send all recorded regions to the Gemini CLI.         |
 | `C-M-x`   | Send the current markdown section to the Gemini CLI. |
 | `C-c M-p` | Page up gemini-cli window by one page                |
 | `C-c M-n` | Page down gemini-cli window by one page              |
@@ -52,13 +55,26 @@ Once `gemini-cli-mode` is installed and enabled, you can interact with the Gemin
     Press `C-c C-z` to quickly jump to the `*gemini-cli*` buffer.
 
 3.  **Send a region of text:**
-    Select a region of text in any buffer and press `C-c C-r` to send it to the Gemini CLI. This is useful for sending code snippets or questions.
+    Select a region of text in any buffer and press `C-c C-r` to send it to the
+    Gemini CLI.
 
-4.  **Send a markdown section:**
-    When editing a markdown file, you can send the current section (the text under the current heading) to the Gemini CLI by pressing `C-M-x`.
+4.  **Send a region with file and line context:**
+    Select a region and press `C-c C-l` to send it formatted with the file path
+    and line numbers, giving the Gemini CLI agent precise location context.
 
-5.  **Navigate the Gemini CLI:**
-    You can use `C-c M-p` and `C-c M-n` to page up and down in the `*gemini-cli*` buffer, which is useful when the output is long.
+5.  **Record and batch send references:**
+    Press `C-c M-w` to record a selected region's metadata (file path, lines,
+    and text) to a list. Repeat across different files/lines, then press
+    `C-c C-y` to send all recorded regions at once. Run
+    `M-x gemini-cli-clear-recorded-regions` to clear them manually.
+
+6.  **Send a markdown section:**
+    When editing a markdown file, you can send the current section (the text
+    under the current heading) to the Gemini CLI by pressing `C-M-x`.
+
+7.  **Navigate the Gemini CLI:**
+    You can use `C-c M-p` and `C-c M-n` to page up and down in the
+    `*gemini-cli*` buffer, which is useful when the output is long.
 
 ## Installation
 

@@ -30,6 +30,7 @@
 (declare-function vterm-send-return "vterm" ())
 (declare-function vterm-send-escape "vterm" ())
 (declare-function vterm-send-key "vterm" (key &optional shift meta ctrl accept-proc-output))
+(declare-function vc-root-dir "vc" ())
 
 (defgroup gemini-cli nil
   "Gemini CLI interface."
@@ -262,6 +263,89 @@ Use PREFIX to choose agent."
   (let ((region-text (buffer-substring-no-properties start end)))
     (gemini-cli-send-prompt region-text nil prefix)))
 
+(defvar gemini-cli-recorded-regions nil
+  "List of recorded regions.
+Each element is a property list:
+(:file FILE :start START-LINE :end END-LINE :text TEXT).")
+
+(defun gemini-cli--get-relative-file-name (file-path)
+  "Get a clean, relative path for FILE-PATH if possible."
+  (if (and file-path (file-name-absolute-p file-path))
+      (let ((project-dir (and (fboundp 'vc-root-dir) (vc-root-dir))))
+        (if project-dir
+            (file-relative-name file-path project-dir)
+          (file-relative-name file-path default-directory)))
+    file-path))
+
+(defun gemini-cli--get-markdown-lang ()
+  "Get the markdown language identifier based on current major mode."
+  (let ((mode-str (symbol-name major-mode)))
+    (if (string-suffix-p "-mode" mode-str)
+        (substring mode-str 0 -5)
+      mode-str)))
+
+(defun gemini-cli-record-region (start end)
+  "Record the current region's file path, start and end line, and text.
+The region is saved to `gemini-cli-recorded-regions' for later use."
+  (interactive "r")
+  (let* ((file (or (buffer-file-name) (buffer-name)))
+         (start-line (line-number-at-pos start))
+         (end-line (line-number-at-pos end))
+         (text (buffer-substring-no-properties start end))
+         (entry (list :file file
+                      :start start-line
+                      :end end-line
+                      :text text)))
+    (push entry gemini-cli-recorded-regions)
+    (message "Recorded region in %s (lines %d-%d)"
+             (file-name-nondirectory file) start-line end-line)))
+
+(defun gemini-cli-clear-recorded-regions ()
+  "Clear all recorded regions."
+  (interactive)
+  (setq gemini-cli-recorded-regions nil)
+  (message "Cleared all recorded regions."))
+
+(defun gemini-cli-send-recorded-regions (&optional prefix)
+  "Format and send all recorded regions to the Gemini CLI.
+Clears `gemini-cli-recorded-regions' after sending.
+With PREFIX, prompt for agent."
+  (interactive "P")
+  (if (not gemini-cli-recorded-regions)
+      (message "No recorded regions to send.")
+    (let* ((lang (gemini-cli--get-markdown-lang))
+           (formatted-text
+            (mapconcat
+             (lambda (r)
+               (let ((rel-file (gemini-cli--get-relative-file-name
+                                (plist-get r :file))))
+                 (format "File: %s (Lines: %d-%d)\nCode:\n```%s\n%s\n```"
+                         rel-file
+                         (plist-get r :start)
+                         (plist-get r :end)
+                         lang
+                         (plist-get r :text))))
+             (reverse gemini-cli-recorded-regions)
+             "\n\n")))
+      (gemini-cli-send-prompt formatted-text nil prefix)
+      (setq gemini-cli-recorded-regions nil)
+      (message "Sent all recorded regions to Gemini CLI."))))
+
+(defun gemini-cli-send-region-with-reference (start end &optional prefix)
+  "Send current region to Gemini CLI with its file and line context.
+With PREFIX, prompt for agent."
+  (interactive "r\nP")
+  (let* ((file (or (buffer-file-name) (buffer-name)))
+         (rel-file (gemini-cli--get-relative-file-name file))
+         (start-line (line-number-at-pos start))
+         (end-line (line-number-at-pos end))
+         (text (buffer-substring-no-properties start end))
+         (lang (gemini-cli--get-markdown-lang))
+         (formatted-text
+          (format "File: %s (Lines: %d-%d)\nCode:\n```%s\n%s\n```"
+                  rel-file start-line end-line lang text)))
+    (gemini-cli-send-prompt formatted-text nil prefix)))
+
 (defun gemini-cli--send-key (n key &optional shift meta ctrl accept-proc-output prefix)
   "Send a KEY with the shift modifier to the Gemini CLI.
 This function sends the specified KEY to the Gemini CLI
@@ -377,6 +461,9 @@ With PREFIX, prompt for agent."
     (define-key map (kbd "C-c C-a") #'gemini-cli-start-line)
     (define-key map (kbd "C-c C-e") #'gemini-cli-copy-last-result-at-point)
     (define-key map (kbd "C-c C-<return>") #'gemini-cli-execute-prompt)
+    (define-key map (kbd "C-c M-w") #'gemini-cli-record-region)
+    (define-key map (kbd "C-c C-y") #'gemini-cli-send-recorded-regions)
+    (define-key map (kbd "C-c C-l") #'gemini-cli-send-region-with-reference)
     map)
   "Keymap for gemini-mode.")
 

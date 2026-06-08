@@ -2,6 +2,14 @@
 
 ## [Unreleased] - 2025-11-23
 
+### Added
+- Feature to record regions with file and line context
+  (`gemini-cli-record-region` bound to `C-c M-w`).
+- Feature to send all recorded regions together
+  (`gemini-cli-send-recorded-regions` bound to `C-c C-y`).
+- Feature to send a region immediately with its file path and lines
+  (`gemini-cli-send-region-with-reference` bound to `C-c C-l`).
+
 ### Fixed
 - Byte-compilation warnings with Emacs 30.1.
 - Removed deprecated `gemini-cli-buffer` and unused variables.
