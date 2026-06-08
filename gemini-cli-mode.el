@@ -280,13 +280,24 @@ Optional PREFIX to select agent."
               (vterm-send-key key shift meta ctrl accept-proc-output))))
       (message "Gemini process not running. Run M-x gemini-cli-start first."))))
 
+(defvar gemini-cli-navigation-repeat-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "M-p") #'gemini-cli-page-up)
+    (define-key map (kbd "M-n") #'gemini-cli-page-down)
+    map)
+  "Keymap to repeat Gemini CLI navigation commands.")
+
+(put 'gemini-cli-page-up 'repeat-map 'gemini-cli-navigation-repeat-map)
+(put 'gemini-cli-page-down 'repeat-map 'gemini-cli-navigation-repeat-map)
+
 (defun gemini-cli-page-up (&optional prefix)
   "Send the page up key to the Gemini CLI.
 This is equivalent to pressing the Page Up key in the
 Gemini buffer.
 With PREFIX, prompt for agent."
   (interactive "P")
-  (gemini-cli--send-key 1 "<prior>" t nil nil nil prefix))
+  (gemini-cli--send-key 1 "<prior>" t nil nil nil prefix)
+  (set-transient-map gemini-cli-navigation-repeat-map t))
 
 (defun gemini-cli-page-down (&optional prefix)
   "Send the page down key to the Gemini CLI.
@@ -294,7 +305,8 @@ This is equivalent to pressing the Page Down key in the
 Gemini buffer.
 With PREFIX, prompt for agent."
   (interactive "P")
-  (gemini-cli--send-key 1 "<next>" t nil nil nil prefix))
+  (gemini-cli--send-key 1 "<next>" t nil nil nil prefix)
+  (set-transient-map gemini-cli-navigation-repeat-map t))
 
 (defun gemini-cli-send-section (&optional prefix)
   "Send the current markdown section to the Gemini CLI.

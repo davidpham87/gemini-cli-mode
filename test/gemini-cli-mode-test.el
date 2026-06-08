@@ -164,3 +164,11 @@
           (gemini-cli-start "test-agent")
           (should (eq (current-buffer) orig-buf))
           (kill-buffer "*gemini-test-agent*"))))))
+
+(ert-deftest gemini-cli-test-navigation-repeat-map-defined ()
+  "Test that the repeat keymap is defined and contains bindings."
+  (should (keymapp gemini-cli-navigation-repeat-map))
+  (should (eq (lookup-key gemini-cli-navigation-repeat-map (kbd "M-p"))
+              #'gemini-cli-page-up))
+  (should (eq (lookup-key gemini-cli-navigation-repeat-map (kbd "M-n"))
+              #'gemini-cli-page-down)))
