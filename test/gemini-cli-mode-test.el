@@ -74,7 +74,7 @@
   "Test resolving config fallback."
   (let ((gemini-cli-agents '((:name "other"))))
     (should (equal (gemini-cli--resolve-config nil "non-existent")
-                   '(:name "gemini" :command "gemini")))))
+                   (list :name "gemini" :command gemini-cli-cmd)))))
 
 (ert-deftest gemini-cli-test-get-active-agent-names ()
   "Test retrieving active agent names."
@@ -172,3 +172,49 @@
               #'gemini-cli-page-up))
   (should (eq (lookup-key gemini-cli-navigation-repeat-map (kbd "M-n"))
               #'gemini-cli-page-down)))
+
+(ert-deftest gemini-cli-test-page-up-down ()
+  "Test that page up and down send Shift+Up and Shift+Down."
+  (let ((gemini-cli-active-buffers (make-hash-table :test 'equal))
+        (sent-keys nil))
+    (with-temp-buffer
+      (puthash "gemini" (current-buffer) gemini-cli-active-buffers)
+      (setq gemini-cli-last-buffer (current-buffer))
+      (cl-letf (((symbol-function 'vterm-send-key)
+                 (lambda (key &optional shift meta ctrl accept)
+                   (push (list key shift) sent-keys)))
+                ((symbol-function 'set-transient-map) #'ignore))
+        (gemini-cli-page-up)
+        (gemini-cli-page-down)
+        (should (equal (reverse sent-keys)
+                       '(("<up>" t) ("<down>" t))))))))
+
+(ert-deftest gemini-cli-test-record-region ()
+  "Test recording regions and sending them."
+  (let ((gemini-cli-recorded-regions nil)
+        (gemini-cli-active-buffers (make-hash-table :test 'equal))
+        (sent-prompts nil))
+    (with-temp-buffer
+      (puthash "gemini" (current-buffer) gemini-cli-active-buffers)
+      (setq gemini-cli-last-buffer (current-buffer))
+      (cl-letf (((symbol-function 'gemini-cli-send-prompt)
+                 (lambda (prompt &optional sleep prefix)
+                   (push prompt sent-prompts)))
+                ((symbol-function 'buffer-file-name)
+                 (lambda () "/mock/project/file.py"))
+                ((symbol-function 'vc-root-dir)
+                 (lambda () "/mock/project/")))
+        (insert "line 1\nline 2\nline 3\n")
+        (gemini-cli-record-region (point-min) (point-max))
+        (should (equal (length gemini-cli-recorded-regions) 1))
+        (should (equal (plist-get (car gemini-cli-recorded-regions)
+                                  :start)
+                       1))
+        (should (equal (plist-get (car gemini-cli-recorded-regions)
+                                  :end)
+                       4))
+        
+        (gemini-cli-send-recorded-regions)
+        (should (null gemini-cli-recorded-regions))
+        (should (string-match-p "File: file.py (Lines: 1-4)"
+                                (car sent-prompts)))))))
