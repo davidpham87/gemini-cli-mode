@@ -49,7 +49,7 @@ it fun to work with LLMs from Emacs.
 Once `gemini-cli-mode` is installed and enabled, you can interact with the Gemini CLI from any buffer. Here are some common workflows:
 
 1.  **Start the Gemini CLI:**
-    Press `C-c C-p` to open a new `vterm` buffer with the `gemini` command running.
+    Press `C-c C-p` to open a new `vterm` buffer with the `agy` command running.
 
 2.  **Switch to the Gemini CLI:**
     Press `C-c C-z` to quickly jump to the `*gemini-cli*` buffer.
@@ -122,7 +122,8 @@ You can customize the behavior of `gemini-cli-mode` by setting the following var
 
 *   `gemini-cli-agents`: A list of property lists defining the available Gemini agents. Each agent configuration can have the following properties:
     *   `:name` (string): The name of the agent.
-    *   `:command` (string, optional): The command to launch the agent. Defaults to `gemini-cli-cmd` ("gemini").
+    *   `:command` (string, optional): The command to launch the agent.
+        Defaults to `gemini-cli-cmd` ("agy").
     *   `:home-directory` (string, optional): The working directory for the agent.
     *   `:initial-prompt` (string, optional): An initial prompt to send to the agent upon startup.
 
@@ -130,14 +131,16 @@ You can customize the behavior of `gemini-cli-mode` by setting the following var
 
 ```emacs-lisp
 (setq gemini-cli-agents
-      '((:name "default" :command "gemini")
+      '((:name "default" :command "agy")
         (:name "coder"
-         :command "gemini"
+         :command "agy"
          :home-directory "~/projects/code"
-         :initial-prompt "You are an expert software engineer. Focus on clean, performant code.")
+         :initial-prompt (concat "You are an expert software engineer. "
+                                 "Focus on clean, performant code."))
         (:name "writer"
-         :command "gemini"
-         :initial-prompt "You are a creative writer. Focus on engaging storytelling.")))
+         :command "agy"
+         :initial-prompt (concat "You are a creative writer. "
+                                 "Focus on engaging storytelling."))))
 ```
 
 ### Configuration Rationale
