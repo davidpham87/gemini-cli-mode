@@ -149,13 +149,18 @@ not log the conversation to a file.  Otherwise, it calls
          (buffer (gethash agent-name gemini-cli-active-buffers)))
 
     (if (buffer-live-p buffer)
-        (message "Agent '%s' is already running in buffer %s" agent-name buffer)
-      (split-window-horizontally)
-      (let* ((buffer-name (format "*gemini-%s*" agent-name))
-             (new-buffer (vterm buffer-name)))
-        (switch-to-buffer-other-window new-buffer)
-        (gemini-cli--setup-buffer-state agent-name new-buffer)
-        (gemini-cli--initialize-session new-buffer config ignore-logging-p)))))
+        (message "Agent '%s' is already running in buffer %s"
+                 agent-name buffer)
+      (let ((new-window (split-window-horizontally)))
+        (save-selected-window
+          (when (windowp new-window)
+            (select-window new-window))
+          (let* ((buffer-name (format "*gemini-%s*" agent-name))
+                 (new-buffer (vterm buffer-name)))
+            (gemini-cli--setup-buffer-state agent-name new-buffer)
+            (gemini-cli--initialize-session new-buffer
+                                            config
+                                            ignore-logging-p)))))))
 
 (defun gemini-cli--get-active-agent-names ()
   "Return a list of names of active agents."

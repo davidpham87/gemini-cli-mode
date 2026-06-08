@@ -146,3 +146,21 @@
       (gemini-cli-start "test-agent")
       (should (buffer-live-p (get-buffer "*gemini-test-agent*")))
       (kill-buffer "*gemini-test-agent*"))))
+
+(ert-deftest gemini-cli-test-start-preserves-current-buffer ()
+  "Test that gemini-cli-start does not change the current buffer."
+  (let ((gemini-cli-agents '((:name "test-agent" :command "test-cmd"))))
+    (with-temp-buffer
+      (let ((orig-buf (current-buffer)))
+        (cl-letf (((symbol-function 'split-window-horizontally)
+                   (lambda () (selected-window)))
+                  ((symbol-function 'gemini-cli--initialize-session) #'ignore)
+                  ((symbol-function 'vterm)
+                   (lambda (name)
+                     (let ((buf (get-buffer-create name)))
+                       (set-window-buffer (selected-window) buf)
+                       (set-buffer buf)
+                       buf))))
+          (gemini-cli-start "test-agent")
+          (should (eq (current-buffer) orig-buf))
+          (kill-buffer "*gemini-test-agent*"))))))
