@@ -375,21 +375,27 @@ Optional PREFIX to select agent."
 (put 'gemini-cli-page-down 'repeat-map 'gemini-cli-navigation-repeat-map)
 
 (defun gemini-cli-page-up (&optional prefix)
-  "Send the page up key to the Gemini CLI.
-This is equivalent to pressing the Page Up key in the
-Gemini buffer.
+  "Page up the Gemini CLI buffer window.
 With PREFIX, prompt for agent."
   (interactive "P")
-  (gemini-cli--send-key 1 "<prior>" t nil nil nil prefix)
+  (let* ((buffer (gemini-cli--get-target-buffer prefix))
+         (window (and buffer (get-buffer-window buffer t))))
+    (if window
+        (with-selected-window window
+          (ignore-errors (scroll-down-command)))
+      (message "Gemini CLI window is not visible.")))
   (set-transient-map gemini-cli-navigation-repeat-map t))
 
 (defun gemini-cli-page-down (&optional prefix)
-  "Send the page down key to the Gemini CLI.
-This is equivalent to pressing the Page Down key in the
-Gemini buffer.
+  "Page down the Gemini CLI buffer window.
 With PREFIX, prompt for agent."
   (interactive "P")
-  (gemini-cli--send-key 1 "<next>" t nil nil nil prefix)
+  (let* ((buffer (gemini-cli--get-target-buffer prefix))
+         (window (and buffer (get-buffer-window buffer t))))
+    (if window
+        (with-selected-window window
+          (ignore-errors (scroll-up-command)))
+      (message "Gemini CLI window is not visible.")))
   (set-transient-map gemini-cli-navigation-repeat-map t))
 
 (defun gemini-cli-send-section (&optional prefix)
