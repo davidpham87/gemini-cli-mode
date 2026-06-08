@@ -36,7 +36,7 @@
   :group 'tools)
 
 (defcustom gemini-cli-agents
-  '((:name "gemini" :command "gemini"))
+  '((:name "gemini" :command "agy"))
   "List of Gemini CLI agents configuration.
 This variable is used to configure multiple agents.
 Each element is a property list with keys:
@@ -53,7 +53,7 @@ Each element is a property list with keys:
 (defvar gemini-cli-last-buffer nil
   "The last visited Gemini CLI buffer.")
 
-(defvar gemini-cli-cmd "gemini"
+(defvar gemini-cli-cmd "agy"
   "Command to use to launch gemini.")
 
 (defun gemini-cli-rebind-cli (&optional agent-name)
