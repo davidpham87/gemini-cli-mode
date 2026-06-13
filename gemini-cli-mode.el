@@ -54,6 +54,9 @@ Each element is a property list with keys:
 (defvar gemini-cli-last-buffer nil
   "The last visited Gemini CLI buffer.")
 
+(defvar-local gemini-cli-local-buffer nil
+  "The local Gemini CLI buffer for the current buffer.")
+
 (defvar gemini-cli-cmd "agy"
   "Command to use to launch gemini.")
 
@@ -81,6 +84,34 @@ agent names.  Binds the current buffer to the chosen agent."
         (puthash selected (current-buffer) gemini-cli-active-buffers)
         (setq gemini-cli-last-buffer (current-buffer))
         (message "Bound current buffer to agent '%s'." selected)))))
+
+(defun gemini-cli-bind-buffer-to-agent ()
+  "Bind the current buffer locally to a specific Gemini agent buffer."
+  (interactive)
+  (let* ((buffers (cl-remove-if-not
+                   (lambda (buf)
+                     (string-match "\\`\\*gemini-\\(.+\\)\\*\\'"
+                                   (buffer-name buf)))
+                   (buffer-list)))
+         (agent-names (mapcar (lambda (buf)
+                                (string-match "\\`\\*gemini-\\(.+\\)\\*\\'"
+                                              (buffer-name buf))
+                                (match-string 1 (buffer-name buf)))
+                              buffers)))
+    (if (null agent-names)
+        (message "No Gemini buffers found.")
+      (let* ((default (car agent-names))
+             (selected (completing-read
+                        "Select agent to bind locally to this buffer: "
+                        agent-names nil t nil nil default))
+             (target-buf (cl-find-if
+                          (lambda (buf)
+                            (string= (buffer-name buf)
+                                     (format "*gemini-%s*" selected)))
+                          buffers)))
+        (setq-local gemini-cli-local-buffer target-buf)
+        (message "Bound current buffer locally to agent '%s' (%s)."
+                 selected (buffer-name target-buf))))))
 
 (defun gemini-cli--log-conversation ()
   "Log the conversation with Gemini to a file.
@@ -212,11 +243,14 @@ If no agent is running, it starts the default one."
 (defun gemini-cli--get-target-buffer (&optional prefix)
   "Get the target buffer for commands.
 If PREFIX is non-nil, prompt the user to select an active agent.
-Otherwise, return `gemini-cli-last-buffer`.
+Otherwise, return `gemini-cli-local-buffer' if live, falling back
+to `gemini-cli-last-buffer'.
 If the target buffer is not live, try to find another active one or return nil."
   (let ((buffer (cond (prefix
                        (let ((name (gemini-cli--select-active-agent "Execute in agent: ")))
                          (gethash name gemini-cli-active-buffers)))
+                      ((buffer-live-p gemini-cli-local-buffer)
+                       gemini-cli-local-buffer)
                       ((buffer-live-p gemini-cli-last-buffer)
                        gemini-cli-last-buffer)
                       (t
@@ -472,6 +506,7 @@ With PREFIX, prompt for agent."
     (define-key map (kbd "C-c M-w") #'gemini-cli-record-region)
     (define-key map (kbd "C-c C-y") #'gemini-cli-send-recorded-regions)
     (define-key map (kbd "C-c C-l") #'gemini-cli-send-region-with-reference)
+    (define-key map (kbd "C-c C-b") #'gemini-cli-bind-buffer-to-agent)
     map)
   "Keymap for gemini-mode.")
 
