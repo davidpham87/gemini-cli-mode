@@ -57,21 +57,32 @@ Each element is a property list with keys:
 (defvar gemini-cli-cmd "agy"
   "Command to use to launch gemini.")
 
-(defun gemini-cli-rebind-cli (&optional agent-name)
-  "Bind the current buffer to a Gemini agent.
-This is useful if the connection between the agent and the buffer
-is lost or if you want to treat an existing buffer as an agent's buffer.
-Prompts for AGENT-NAME if not provided."
-  (interactive (list (let ((names (mapcar (lambda (a) (plist-get a :name))
-                                          gemini-cli-agents)))
-                       (completing-read "Bind current buffer to agent: "
-                                        names nil t nil nil (car names)))))
-  (let ((name (if (or (null agent-name) (string= agent-name ""))
-                  "gemini"
-                agent-name)))
-    (puthash name (current-buffer) gemini-cli-active-buffers)
-    (setq gemini-cli-last-buffer (current-buffer))
-    (message "Bound current buffer to agent '%s'." name)))
+(defun gemini-cli-rebind-cli ()
+  "Bind a Gemini buffer to its agent.
+Looks for buffers matching `*gemini-{{agent-name}}*', lists
+the agent names, and binds the chosen one."
+  (interactive)
+  (let* ((buffers (cl-remove-if-not
+                   (lambda (buf)
+                     (string-match "\\`\\*gemini-\\(.+\\)\\*\\'"
+                                   (buffer-name buf)))
+                   (buffer-list)))
+         (choices (mapcar (lambda (buf)
+                            (string-match "\\`\\*gemini-\\(.+\\)\\*\\'"
+                                          (buffer-name buf))
+                            (cons (match-string 1 (buffer-name buf)) buf))
+                          buffers)))
+    (if (null choices)
+        (message "No Gemini buffers found.")
+      (let* ((default (car (car choices)))
+             (selected (completing-read "Select agent buffer to bind: "
+                                        (mapcar #'car choices)
+                                        nil t nil nil default))
+             (buf (cdr (assoc selected choices))))
+        (puthash selected buf gemini-cli-active-buffers)
+        (setq gemini-cli-last-buffer buf)
+        (message "Bound agent '%s' to buffer %s."
+                 selected (buffer-name buf))))))
 
 (defun gemini-cli--log-conversation ()
   "Log the conversation with Gemini to a file.
