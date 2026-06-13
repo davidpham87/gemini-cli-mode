@@ -62,10 +62,13 @@ Each element is a property list with keys:
 This is useful if the connection between the agent and the buffer
 is lost or if you want to treat an existing buffer as an agent's buffer.
 Prompts for AGENT-NAME if not provided."
-  (interactive (list (completing-read "Bind current buffer to agent: "
-                                      (mapcar (lambda (a) (plist-get a :name)) gemini-cli-agents)
-                                      nil t)))
-  (let ((name (or agent-name "gemini")))
+  (interactive (list (let ((names (mapcar (lambda (a) (plist-get a :name))
+                                          gemini-cli-agents)))
+                       (completing-read "Bind current buffer to agent: "
+                                        names nil t nil nil (car names)))))
+  (let ((name (if (or (null agent-name) (string= agent-name ""))
+                  "gemini"
+                agent-name)))
     (puthash name (current-buffer) gemini-cli-active-buffers)
     (setq gemini-cli-last-buffer (current-buffer))
     (message "Bound current buffer to agent '%s'." name)))
