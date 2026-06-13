@@ -54,6 +54,9 @@ Each element is a property list with keys:
 (defvar gemini-cli-last-buffer nil
   "The last visited Gemini CLI buffer.")
 
+(defvar gemini-cli-project-agents (make-hash-table :test 'equal)
+  "Hash table mapping project root directories to agent names.")
+
 (defvar-local gemini-cli-local-agent nil
   "The local Gemini CLI agent name for the current buffer.")
 
@@ -112,6 +115,80 @@ agent names.  Binds the current buffer to the chosen agent."
         (setq-local gemini-cli-local-agent selected)
         (message "Bound current buffer locally to agent '%s' (%s)."
                  selected (buffer-name target-buf))))))
+
+(defun gemini-cli-bind-project-to-agent ()
+  "Bind the current project to a specific Gemini agent.
+Uses the VCS/project root directory as the key."
+  (interactive)
+  (let ((project-dir (and (fboundp 'vc-root-dir) (vc-root-dir))))
+    (if (not project-dir)
+        (message "Not in a VCS/project directory.")
+      (let* ((buffers (cl-remove-if-not
+                       (lambda (buf)
+                         (string-match "\\`\\*gemini-\\(.+\\)\\*\\'"
+                                       (buffer-name buf)))
+                       (buffer-list)))
+             (agent-names (mapcar (lambda (buf)
+                                    (string-match
+                                     "\\`\\*gemini-\\(.+\\)\\*\\'"
+                                     (buffer-name buf))
+                                    (match-string 1 (buffer-name buf)))
+                                  buffers)))
+        (if (null agent-names)
+            (message "No Gemini buffers found.")
+          (let* ((default (car agent-names))
+                 (selected (completing-read
+                            "Select agent for this project: "
+                            agent-names nil t nil nil default)))
+            (puthash project-dir selected gemini-cli-project-agents)
+            (message "Bound project '%s' to agent '%s'."
+                     (file-name-nondirectory (directory-file-name project-dir))
+                     selected)))))))
+
+(defun gemini-cli-create-chat-from-reference (&optional prefix)
+  "Create a new chat buffer containing the current context as a reference.
+If a region is active, formats that region. Otherwise, formats the current line.
+Binds the new buffer locally to the same agent as the current buffer.
+With PREFIX, prompts for the agent."
+  (interactive "P")
+  (let* ((file (or (buffer-file-name) (buffer-name)))
+         (rel-file (gemini-cli--get-relative-file-name file))
+         (bounds (if (use-region-p)
+                     (cons (region-beginning) (region-end))
+                   (cons (line-beginning-position) (line-end-position))))
+         (start-line (line-number-at-pos (car bounds)))
+         (end-line (line-number-at-pos (cdr bounds)))
+         (text (buffer-substring-no-properties (car bounds) (cdr bounds)))
+         (lang (gemini-cli--get-markdown-lang))
+         (formatted-ref (format
+                         "File: %s (Lines: %d-%d)\nCode:\n```%s\n%s\n```\n\n"
+                         rel-file start-line end-line lang text))
+         (agent-name (or (and (not prefix) gemini-cli-local-agent)
+                         (let ((proj-dir (and (fboundp 'vc-root-dir)
+                                              (vc-root-dir))))
+                           (and proj-dir
+                                (gethash proj-dir gemini-cli-project-agents)))
+                         (gemini-cli--resolve-agent-name nil)))
+         (agent-buf (gethash agent-name gemini-cli-active-buffers))
+         (chat-buf-name (format "*gemini-chat-%s-%s*"
+                                agent-name
+                                (format-time-string "%Y%m%d-%H%M%S")))
+         (chat-buf (get-buffer-create chat-buf-name)))
+    (with-current-buffer chat-buf
+      (markdown-mode)
+      (gemini-cli-mode 1)
+      (setq-local gemini-cli-local-agent agent-name)
+      (insert formatted-ref)
+      (goto-char (point-max)))
+    (delete-other-windows)
+    (switch-to-buffer chat-buf)
+    (when (buffer-live-p agent-buf)
+      (let ((new-win (split-window-horizontally)))
+        (select-window new-win)
+        (switch-to-buffer agent-buf)
+        (select-window (get-buffer-window chat-buf))))
+    (message "Created chat buffer %s associated with agent '%s'."
+             chat-buf-name agent-name)))
 
 (defun gemini-cli--log-conversation ()
   "Log the conversation with Gemini to a file.
@@ -236,8 +313,12 @@ By default, switches to the last visited Gemini buffer.
 With a prefix argument, prompts to select an agent to switch to.
 If no agent is running, it starts the default one."
   (interactive "P")
-  (let* ((local-buf (and gemini-cli-local-agent
-                         (gethash gemini-cli-local-agent
+  (let* ((proj-dir (and (fboundp 'vc-root-dir) (vc-root-dir)))
+         (proj-agent (and proj-dir
+                          (gethash proj-dir gemini-cli-project-agents)))
+         (local-agent (or gemini-cli-local-agent proj-agent))
+         (local-buf (and local-agent
+                         (gethash local-agent
                                   gemini-cli-active-buffers)))
          (target-buffer
           (cond (prefix
@@ -260,11 +341,15 @@ If no agent is running, it starts the default one."
 (defun gemini-cli--get-target-buffer (&optional prefix)
   "Get the target buffer for commands.
 If PREFIX is non-nil, prompt the user to select an active agent.
-Otherwise, return the buffer for `gemini-cli-local-agent' if live, falling
-back to `gemini-cli-last-buffer'.
+Otherwise, return the buffer for `gemini-cli-local-agent' or project agent
+if live, falling back to `gemini-cli-last-buffer'.
 If the target buffer is not live, try to find another active one or return nil."
-  (let* ((local-buf (and gemini-cli-local-agent
-                         (gethash gemini-cli-local-agent
+  (let* ((proj-dir (and (fboundp 'vc-root-dir) (vc-root-dir)))
+         (proj-agent (and proj-dir
+                          (gethash proj-dir gemini-cli-project-agents)))
+         (local-agent (or gemini-cli-local-agent proj-agent))
+         (local-buf (and local-agent
+                         (gethash local-agent
                                   gemini-cli-active-buffers)))
          (buffer (cond (prefix
                         (let ((name (gemini-cli--select-active-agent
@@ -528,6 +613,7 @@ With PREFIX, prompt for agent."
     (define-key map (kbd "C-c C-y") #'gemini-cli-send-recorded-regions)
     (define-key map (kbd "C-c C-l") #'gemini-cli-send-region-with-reference)
     (define-key map (kbd "C-c C-b") #'gemini-cli-bind-buffer-to-agent)
+    (define-key map (kbd "C-c C-o") #'gemini-cli-create-chat-from-reference)
     map)
   "Keymap for gemini-mode.")
 
