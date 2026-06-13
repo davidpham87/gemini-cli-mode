@@ -54,8 +54,8 @@ Each element is a property list with keys:
 (defvar gemini-cli-last-buffer nil
   "The last visited Gemini CLI buffer.")
 
-(defvar-local gemini-cli-local-buffer nil
-  "The local Gemini CLI buffer for the current buffer.")
+(defvar-local gemini-cli-local-agent nil
+  "The local Gemini CLI agent name for the current buffer.")
 
 (defvar gemini-cli-cmd "agy"
   "Command to use to launch gemini.")
@@ -86,7 +86,7 @@ agent names.  Binds the current buffer to the chosen agent."
         (message "Bound current buffer to agent '%s'." selected)))))
 
 (defun gemini-cli-bind-buffer-to-agent ()
-  "Bind the current buffer locally to a specific Gemini agent buffer."
+  "Bind the current buffer locally to a specific Gemini agent."
   (interactive)
   (let* ((buffers (cl-remove-if-not
                    (lambda (buf)
@@ -109,7 +109,7 @@ agent names.  Binds the current buffer to the chosen agent."
                             (string= (buffer-name buf)
                                      (format "*gemini-%s*" selected)))
                           buffers)))
-        (setq-local gemini-cli-local-buffer target-buf)
+        (setq-local gemini-cli-local-agent selected)
         (message "Bound current buffer locally to agent '%s' (%s)."
                  selected (buffer-name target-buf))))))
 
@@ -137,6 +137,8 @@ is a workaround for a bug that prevents scrolling up in the
   (cond ((stringp agent-config-or-name) agent-config-or-name)
         ((and (listp agent-config-or-name) (plist-get agent-config-or-name :name))
          (plist-get agent-config-or-name :name))
+        (gemini-cli-local-agent
+         gemini-cli-local-agent)
         ((> (length gemini-cli-agents) 1)
          (completing-read "Select agent to start: "
                           (mapcar (lambda (a) (plist-get a :name)) gemini-cli-agents)))
@@ -188,13 +190,17 @@ When called with a prefix argument IGNORE-LOGGING-P, it will
 not log the conversation to a file.  Otherwise, it calls
 `gemini-cli-log-conversation' to start logging."
   (interactive (list nil current-prefix-arg))
-  (let* ((agent-name (gemini-cli--resolve-agent-name agent-config-or-name))
+  (let* ((calling-buf (current-buffer))
+         (agent-name (gemini-cli--resolve-agent-name agent-config-or-name))
          (config (gemini-cli--resolve-config agent-config-or-name agent-name))
          (buffer (gethash agent-name gemini-cli-active-buffers)))
 
     (if (buffer-live-p buffer)
-        (message "Agent '%s' is already running in buffer %s"
-                 agent-name buffer)
+        (progn
+          (message "Agent '%s' is already running in buffer %s"
+                   agent-name buffer)
+          (with-current-buffer calling-buf
+            (setq-local gemini-cli-local-agent agent-name)))
       (let ((new-window (split-window-horizontally)))
         (save-selected-window
           (when (windowp new-window)
@@ -204,7 +210,9 @@ not log the conversation to a file.  Otherwise, it calls
             (gemini-cli--setup-buffer-state agent-name new-buffer)
             (gemini-cli--initialize-session new-buffer
                                             config
-                                            ignore-logging-p)))))))
+                                            ignore-logging-p)
+            (with-current-buffer calling-buf
+              (setq-local gemini-cli-local-agent agent-name))))))))
 
 (defun gemini-cli--get-active-agent-names ()
   "Return a list of names of active agents."
@@ -228,11 +236,20 @@ By default, switches to the last visited Gemini buffer.
 With a prefix argument, prompts to select an agent to switch to.
 If no agent is running, it starts the default one."
   (interactive "P")
-  (let ((target-buffer
-         (if prefix
-             (let ((agent-name (gemini-cli--select-active-agent "Switch to agent: ")))
-               (if agent-name (gethash agent-name gemini-cli-active-buffers) nil))
-           gemini-cli-last-buffer)))
+  (let* ((local-buf (and gemini-cli-local-agent
+                         (gethash gemini-cli-local-agent
+                                  gemini-cli-active-buffers)))
+         (target-buffer
+          (cond (prefix
+                 (let ((agent-name (gemini-cli--select-active-agent
+                                    "Switch to agent: ")))
+                   (if agent-name
+                       (gethash agent-name gemini-cli-active-buffers)
+                     nil)))
+                ((buffer-live-p local-buf)
+                 local-buf)
+                (t
+                 gemini-cli-last-buffer))))
 
     (if (buffer-live-p target-buffer)
         (progn
@@ -243,19 +260,23 @@ If no agent is running, it starts the default one."
 (defun gemini-cli--get-target-buffer (&optional prefix)
   "Get the target buffer for commands.
 If PREFIX is non-nil, prompt the user to select an active agent.
-Otherwise, return `gemini-cli-local-buffer' if live, falling back
-to `gemini-cli-last-buffer'.
+Otherwise, return the buffer for `gemini-cli-local-agent' if live, falling
+back to `gemini-cli-last-buffer'.
 If the target buffer is not live, try to find another active one or return nil."
-  (let ((buffer (cond (prefix
-                       (let ((name (gemini-cli--select-active-agent "Execute in agent: ")))
-                         (gethash name gemini-cli-active-buffers)))
-                      ((buffer-live-p gemini-cli-local-buffer)
-                       gemini-cli-local-buffer)
-                      ((buffer-live-p gemini-cli-last-buffer)
-                       gemini-cli-last-buffer)
-                      (t
-                       (let ((name (car (gemini-cli--get-active-agent-names))))
-                         (gethash name gemini-cli-active-buffers))))))
+  (let* ((local-buf (and gemini-cli-local-agent
+                         (gethash gemini-cli-local-agent
+                                  gemini-cli-active-buffers)))
+         (buffer (cond (prefix
+                        (let ((name (gemini-cli--select-active-agent
+                                     "Execute in agent: ")))
+                          (gethash name gemini-cli-active-buffers)))
+                       ((buffer-live-p local-buf)
+                        local-buf)
+                       ((buffer-live-p gemini-cli-last-buffer)
+                        gemini-cli-last-buffer)
+                       (t
+                        (let ((name (car (gemini-cli--get-active-agent-names))))
+                          (gethash name gemini-cli-active-buffers))))))
     (when (buffer-live-p buffer)
       (setq gemini-cli-last-buffer buffer)
       buffer)))
