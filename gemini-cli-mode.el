@@ -391,7 +391,7 @@ Wait SLEEP-TIME before executing.  Use PREFIX to open the choose the agent."
         (progn
           (setq gemini-cli-last-buffer target-buffer)
           (with-current-buffer target-buffer
-            (vterm-send-string prompt)
+            (vterm-send-string prompt t)
             (sleep-for (or sleep-time 0.5))
             (vterm-send-escape)
             (vterm-send-return)
