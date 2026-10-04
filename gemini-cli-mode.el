@@ -229,15 +229,12 @@ Use AGENT-CONFIG-OR-NAME if it is a configuration list."
         (gemini-cli--get-agent-config agent-name))
       (list :name "gemini" :command gemini-cli-cmd)))
 
-(defun gemini-cli--initialize-session (buffer config ignore-logging-p)
-  "Initialize the Gemini session in BUFFER with CONFIG.
-IGNORE-LOGGING-P disables logging."
+(defun gemini-cli--initialize-session (buffer config)
+  "Initialize the Gemini session in BUFFER with CONFIG."
   (with-current-buffer buffer
     (let ((cmd (or (plist-get config :command) gemini-cli-cmd))
           (home-dir (plist-get config :home-directory))
           (init-prompt (plist-get config :initial-prompt)))
-      (when (not ignore-logging-p)
-        (gemini-cli--log-conversation))
       (when home-dir
         (vterm-send-string (format "cd %s" home-dir))
         (vterm-send-return))
@@ -253,7 +250,7 @@ IGNORE-LOGGING-P disables logging."
   (puthash agent-name buffer gemini-cli-active-buffers)
   (setq gemini-cli-last-buffer buffer))
 
-(defun gemini-cli-start (&optional agent-config-or-name ignore-logging-p)
+(defun gemini-cli-start (&optional agent-config-or-name)
   "Start the Gemini CLI in a vterm buffer.
 
 AGENT-CONFIG-OR-NAME can be a configuration plist or an agent name string.
@@ -261,11 +258,7 @@ If nil, it defaults to the \"gemini\" agent or prompts if multiple agents are
 defined.
 
 This function opens a new vterm buffer named `*gemini-{{name}}*',
-splits the window horizontally, and starts the Gemini CLI.
-
-When called with a prefix argument IGNORE-LOGGING-P, it will
-not log the conversation to a file.  Otherwise, it calls
-`gemini-cli-log-conversation' to start logging."
+splits the window horizontally, and starts the Gemini CLI."
   (interactive (list nil current-prefix-arg))
   (let* ((calling-buf (current-buffer))
          (agent-name (gemini-cli--resolve-agent-name agent-config-or-name))
@@ -286,8 +279,7 @@ not log the conversation to a file.  Otherwise, it calls
                  (new-buffer (vterm buffer-name)))
             (gemini-cli--setup-buffer-state agent-name new-buffer)
             (gemini-cli--initialize-session new-buffer
-                                            config
-                                            ignore-logging-p)
+                                            config)
             (with-current-buffer calling-buf
               (setq-local gemini-cli-local-agent agent-name))))))))
 
